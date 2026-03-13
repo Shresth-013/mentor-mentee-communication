@@ -291,6 +291,11 @@ html+=`<p><b>${d.mentee}</b>: ${d.question} (${d.time})</p>`
 document.getElementById("doubtList").innerHTML=html
 
 }
+document.getElementById("message").addEventListener("keypress", function(e){
+    if(e.key === "Enter"){
+        sendMessage();
+    }
+});
 
 loadMessages()
 loadDoubts()
