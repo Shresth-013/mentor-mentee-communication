@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Mentor Mentee Communication</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+body{
+font-family:'Segoe UI',sans-serif;
+background: linear-gradient(135deg,#667eea,#764ba2);
+display:flex;
+justify-content:center;
+align-items:flex-start;
+min-height:100vh;
+margin:0;
+padding:40px 0;
+}
+
+/* Glassmorphism container */
+
+.container{
+background: rgba(255,255,255,0.15);
+backdrop-filter: blur(20px);
+border-radius:20px;
+width:950px;
+max-width:95%;
+padding:35px;
+box-shadow:0 20px 40px rgba(0,0,0,0.25);
+color:white;
+}
+
+h1{
+text-align:center;
+margin-bottom:25px;
+font-weight:600;
+letter-spacing:1px;
+}
+
+/* Controls */
+
+.controls{
+display:flex;
+gap:12px;
+margin-bottom:20px;
+flex-wrap:wrap;
+}
+
+select,input{
+padding:12px;
+border-radius:10px;
+border:none;
+flex:1;
+outline:none;
+font-size:14px;
+}
+
+/* Buttons */
+
+button{
+background: linear-gradient(135deg,#4facfe,#00f2fe);
+color:white;
+border:none;
+padding:12px 16px;
+border-radius:10px;
+cursor:pointer;
+font-weight:600;
+transition:0.25s;
+}
+
+button:hover{
+transform:translateY(-2px);
+box-shadow:0 6px 14px rgba(0,0,0,0.25);
+}
+
+/* Chat Box */
+
+#chat{
+height:420px;
+overflow-y:auto;
+padding:20px;
+background:rgba(255,255,255,0.9);
+border-radius:15px;
+margin-bottom:25px;
+color:black;
+}
+
+/* Chat messages */
+
+.message{
+margin:10px 0;
+padding:12px 16px;
+border-radius:18px;
+max-width:65%;
+font-size:14px;
+animation:fadeIn 0.3s ease;
+}
+
+.mentor{
+background:linear-gradient(135deg,#4facfe,#00c6ff);
+color:white;
+margin-left:auto;
+}
+
+.mentee{
+background:#e5e7eb;
+color:black;
+margin-right:auto;
+}
+
+.time{
+font-size:10px;
+opacity:0.7;
+display:block;
+margin-top:4px;
+}
+
+/* Doubt Section */
+
+.doubt-section{
+background:rgba(255,255,255,0.2);
+padding:20px;
+border-radius:15px;
+}
+
+.doubt-section h3{
+margin-top:0;
+margin-bottom:15px;
+}
+
+#doubtText{
+width:70%;
+margin-right:10px;
+}
+
+/* Doubt list */
+
+#doubtList{
+margin-top:15px;
+font-size:14px;
+}
+
+#doubtList p{
+background:white;
+color:black;
+padding:10px;
+border-radius:8px;
+margin-bottom:8px;
+}
+
+/* Animation */
+
+@keyframes fadeIn{
+from{opacity:0;transform:translateY(6px);}
+to{opacity:1;transform:translateY(0);}
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Mentor–Mentee Communication</h1>
+
+<div class="controls">
+
+<select id="role">
+
+<option value="mentor">Mentor</option>
+<option value="mentee1">Mentee 1</option>
+<option value="mentee2">Mentee 2</option>
+<option value="mentee3">Mentee 3</option>
+<option value="mentee4">Mentee 4</option>
+<option value="mentee5">Mentee 5</option>
+
+</select>
+
+<input id="message" placeholder="Type message">
+
+<button onclick="sendMessage()">Send</button>
+<button onclick="clearChat()">Clear Chat</button>
+
+</div>
+
+<div id="chat"></div>
+
+<div class="doubt-section">
+
+<h3>Raise a Doubt</h3>
+
+<input id="doubtText" placeholder="Enter your doubt">
+
+<button onclick="raiseDoubt()">Submit Doubt</button>
+
+<div id="doubtList"></div>
+
+</div>
+
+</div>
+
+<script>
+
+async function sendMessage(){
+
+let sender=document.getElementById("role").value
+let text=document.getElementById("message").value
+
+if(text.trim()=="") return
+
+await fetch("/send",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({sender,text})
+})
+
+document.getElementById("message").value=""
+
+loadMessages()
+
+}
+
+async function clearChat(){
+
+await fetch("/clear",{method:"POST"})
+loadMessages()
+
+}
+
+async function loadMessages(){
+
+let res=await fetch("/messages")
+let data=await res.json()
+
+let chat=""
+
+data.forEach(msg=>{
+
+let type=msg.sender==="mentor"?"mentor":"mentee"
+
+chat+=`
+<div class="message ${type}">
+<b>${msg.sender}</b><br>
+${msg.text}
+<span class="time">${msg.time}</span>
+</div>
+`
+
+})
+
+let chatBox=document.getElementById("chat")
+chatBox.innerHTML=chat
+chatBox.scrollTop=chatBox.scrollHeight
+
+}
+
+async function raiseDoubt(){
+
+let mentee=document.getElementById("role").value
+let question=document.getElementById("doubtText").value
+
+await fetch("/raise_doubt",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({mentee,question})
+})
+
+document.getElementById("doubtText").value=""
+
+loadDoubts()
+
+}
+
+async function loadDoubts(){
+
+let res=await fetch("/doubts")
+let data=await res.json()
+
+let html="<h4>Doubts:</h4>"
+
+data.forEach(d=>{
+html+=`<p><b>${d.mentee}</b>: ${d.question} (${d.time})</p>`
+})
+
+document.getElementById("doubtList").innerHTML=html
+
+}
+
+loadMessages()
+loadDoubts()
+
+setInterval(loadMessages,2000)
+
+</script>
+
+</body>
+</html>
