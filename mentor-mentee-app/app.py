@@ -58,10 +58,13 @@ def raise_doubt():
     data = request.json
 
     doubt = {
-        "mentee": data["mentee"],
-        "question": data["question"],
-        "time": datetime.now().strftime("%H:%M:%S")
-    }
+    "id": len(doubts) + 1,
+    "mentee": data["mentee"],
+    "question": data["question"],
+    "answer": None,
+    "status": "pending",
+    "time": datetime.now().strftime("%H:%M:%S")
+}
 
     doubts.append(doubt)
 
@@ -73,6 +76,35 @@ def raise_doubt():
 def get_doubts():
     return jsonify(doubts)
 
+
+@app.route("/answer_doubt", methods=["POST"])
+def answer_doubt():
+
+    data = request.json
+    doubt_id = data.get("id")
+    answer = data.get("answer")
+
+    for d in doubts:
+        if d["id"] == doubt_id:
+            d["answer"] = answer
+            d["status"] = "answered"
+            return jsonify({"status": "Answered"})
+
+    return jsonify({"error": "Doubt not found"}), 404
+
+
+@app.route("/resolve_doubt", methods=["POST"])
+def resolve_doubt():
+
+    data = request.json
+    doubt_id = data.get("id")
+
+    for d in doubts:
+        if d["id"] == doubt_id:
+            d["status"] = "resolved"
+            return jsonify({"status": "Resolved"})
+
+    return jsonify({"error": "Doubt not found"}), 404
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -152,6 +152,10 @@ border-radius:8px;
 margin-bottom:8px;
 }
 
+.pending { background: #ffeaa7; }
+.answered { background: #74b9ff; color:white; }
+.resolved { background: #55efc4; }
+
 /* Animation */
 
 @keyframes fadeIn{
@@ -279,17 +283,36 @@ loadDoubts()
 
 async function loadDoubts(){
 
-let res=await fetch("/doubts")
-let data=await res.json()
+let res = await fetch("/doubts")
+let data = await res.json()
 
-let html="<h4>Doubts:</h4>"
+let html = "<h4>Doubts:</h4>"
 
-data.forEach(d=>{
-html+=`<p><b>${d.mentee}</b>: ${d.question} (${d.time})</p>`
+data.forEach(d => {
+
+html += `
+<p class="${d.status}">
+<b>${d.mentee}</b>: ${d.question} 
+<br>Status: ${d.status}
+
+${d.answer ? `<br><b>Answer:</b> ${d.answer}` : ""}
+
+${d.status === "pending" ? `
+<br>
+<input id="ans-${d.id}" placeholder="Write answer">
+<button onclick="answerDoubt(${d.id})">Answer</button>
+` : ""}
+
+${d.status === "answered" ? `
+<br>
+<button onclick="resolveDoubt(${d.id})">Mark Resolved</button>
+` : ""}
+
+</p>
+`
 })
 
-document.getElementById("doubtList").innerHTML=html
-
+document.getElementById("doubtList").innerHTML = html
 }
 document.getElementById("message").addEventListener("keypress", function(e){
     if(e.key === "Enter"){
@@ -299,6 +322,30 @@ document.getElementById("message").addEventListener("keypress", function(e){
 
 loadMessages()
 loadDoubts()
+
+async function answerDoubt(id){
+
+let answer = document.getElementById(`ans-${id}`).value
+
+await fetch("/answer_doubt",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({id, answer})
+})
+
+loadDoubts()
+}
+
+async function resolveDoubt(id){
+
+await fetch("/resolve_doubt",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({id})
+})
+
+loadDoubts()
+}
 
 setInterval(loadMessages,2000)
 
