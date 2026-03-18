@@ -1,12 +1,12 @@
 from flask import Flask, render_template, request, jsonify
 from datetime import datetime
+from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# chat messages
+# In-memory storage (temporary)
 messages = []
-
-# doubts raised by mentees
 doubts = []
 
 
@@ -15,14 +15,19 @@ def home():
     return render_template("index.html")
 
 
-# send normal chat message
+# =========================
+# CHAT SYSTEM
+# =========================
+
 @app.route("/send", methods=["POST"])
 def send_message():
-
     data = request.json
 
-    sender = data["sender"]
-    text = data["text"]
+    sender = data.get("sender")
+    text = data.get("text")
+
+    if not sender or not text:
+        return jsonify({"error": "Invalid data"}), 400
 
     message = {
         "sender": sender,
@@ -32,46 +37,58 @@ def send_message():
 
     messages.append(message)
 
+    # Emit real-time message
+    socketio.emit("new_message", message)
+
     return jsonify({"status": "Message Sent"})
 
 
-# get chat messages
+@socketio.on("connect")
+def handle_connect():
+    print("User connected")
+
+
 @app.route("/messages")
 def get_messages():
     return jsonify(messages)
 
 
-# clear chat
 @app.route("/clear", methods=["POST"])
 def clear_chat():
-
     global messages
     messages = []
 
     return jsonify({"status": "Chat Cleared"})
 
 
-# mentee raises doubt
+# =========================
+# DOUBT SYSTEM
+# =========================
+
 @app.route("/raise_doubt", methods=["POST"])
 def raise_doubt():
-
     data = request.json
 
+    mentee = data.get("mentee")
+    question = data.get("question")
+
+    if not mentee or not question:
+        return jsonify({"error": "Invalid data"}), 400
+
     doubt = {
-    "id": len(doubts) + 1,
-    "mentee": data["mentee"],
-    "question": data["question"],
-    "answer": None,
-    "status": "pending",
-    "time": datetime.now().strftime("%H:%M:%S")
-}
+        "id": len(doubts) + 1,
+        "mentee": mentee,
+        "question": question,
+        "answer": None,
+        "status": "pending",
+        "time": datetime.now().strftime("%H:%M:%S")
+    }
 
     doubts.append(doubt)
 
     return jsonify({"status": "Doubt Submitted"})
 
 
-# mentor views doubts
 @app.route("/doubts")
 def get_doubts():
     return jsonify(doubts)
@@ -79,10 +96,13 @@ def get_doubts():
 
 @app.route("/answer_doubt", methods=["POST"])
 def answer_doubt():
-
     data = request.json
+
     doubt_id = data.get("id")
     answer = data.get("answer")
+
+    if not doubt_id or not answer:
+        return jsonify({"error": "Invalid data"}), 400
 
     for d in doubts:
         if d["id"] == doubt_id:
@@ -95,9 +115,12 @@ def answer_doubt():
 
 @app.route("/resolve_doubt", methods=["POST"])
 def resolve_doubt():
-
     data = request.json
+
     doubt_id = data.get("id")
+
+    if not doubt_id:
+        return jsonify({"error": "Invalid data"}), 400
 
     for d in doubts:
         if d["id"] == doubt_id:
@@ -106,5 +129,10 @@ def resolve_doubt():
 
     return jsonify({"error": "Doubt not found"}), 404
 
+
+# =========================
+# RUN APP
+# =========================
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True)
