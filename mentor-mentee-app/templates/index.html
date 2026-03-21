@@ -213,16 +213,9 @@ border-left:4px solid #34d399;
 
 <h1>Mentor–Mentee Communication</h1>
 
-<div class="controls">
+<p>Welcome, {{ current_user.username }}! <a href="{{ url_for('logout') }}" style="color: white;">Logout</a></p>
 
-<select id="role">
-<option value="mentor">Mentor</option>
-<option value="mentee1">Mentee 1</option>
-<option value="mentee2">Mentee 2</option>
-<option value="mentee3">Mentee 3</option>
-<option value="mentee4">Mentee 4</option>
-<option value="mentee5">Mentee 5</option>
-</select>
+<div class="controls">
 
 <input id="message" placeholder="Type message">
 
@@ -255,7 +248,6 @@ const socket = io();
 
 async function sendMessage(){
 
-let sender=document.getElementById("role").value
 let text=document.getElementById("message").value
 
 if(text.trim()=="") return
@@ -263,7 +255,7 @@ if(text.trim()=="") return
 await fetch("/send",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
-body:JSON.stringify({sender,text})
+body:JSON.stringify({text})
 })
 
 document.getElementById("message").value=""
@@ -296,7 +288,6 @@ document.getElementById("chat").innerHTML = ""
 
 async function raiseDoubt(){
 
-let mentee=document.getElementById("role").value
 let question=document.getElementById("doubtText").value
 
 if(question.trim()=="") return
@@ -304,7 +295,7 @@ if(question.trim()=="") return
 await fetch("/raise_doubt",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
-body:JSON.stringify({mentee,question})
+body:JSON.stringify({question})
 })
 
 document.getElementById("doubtText").value=""
