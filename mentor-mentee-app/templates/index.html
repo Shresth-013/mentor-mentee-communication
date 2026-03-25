@@ -225,6 +225,7 @@ border-left:4px solid #34d399;
 </div>
 
 <div id="chat"></div>
+<div id="typing" style="font-size:12px; opacity:0.6; margin-bottom:10px;"></div>
 
 <div class="doubt-section">
 
@@ -263,7 +264,7 @@ document.getElementById("message").value=""
 
 socket.on("new_message", function(msg){
 
-let type = msg.sender === "mentor" ? "mentor" : "mentee"
+let type = msg.role === "mentor" ? "mentor" : "mentee"
 
 let chatBox = document.getElementById("chat")
 
@@ -370,6 +371,41 @@ sendMessage();
 });
 
 loadDoubts()
+
+async function loadMessages(){
+    let res = await fetch("/messages")
+    let data = await res.json()
+
+    let chat = document.getElementById("chat")
+    chat.innerHTML = ""
+
+    data.forEach(msg => {
+        let type = msg.role === "mentor" ? "mentor" : "mentee"
+
+        chat.innerHTML += `
+        <div class="message ${type}">
+        <b>${msg.sender}</b> • ${msg.time}<br>
+        ${msg.text}
+        </div>`
+    })
+
+    chat.scrollTop = chat.scrollHeight
+}
+
+loadMessages()
+
+// Typing indicator
+document.getElementById("message").addEventListener("input", () => {
+    socket.emit("typing", {user: "{{ current_user.username }}"})
+})
+
+socket.on("typing", data => {
+    document.getElementById("typing").innerText = data.user + " is typing..."
+
+    setTimeout(() => {
+        document.getElementById("typing").innerText = ""
+    }, 1000)
+})
 
 </script>
 
