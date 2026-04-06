@@ -24,7 +24,7 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
-    role = db.Column(db.String(20), default="mentee")  # NEW
+    role = db.Column(db.String(20), default="mentee")
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -57,7 +57,14 @@ doubts = []
 @app.route("/register", methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
+
     if form.validate_on_submit():
+        # ✅ NEW: Check duplicate user
+        existing_user = User.query.filter_by(username=form.username.data).first()
+        if existing_user:
+            flash('Username already exists. Try a different one.', 'danger')
+            return redirect(url_for('register'))
+
         hashed_password = generate_password_hash(form.password.data)
 
         user = User(
@@ -69,8 +76,12 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        flash('Account created! Login now.', 'success')
+        flash('Account created successfully! Please login.', 'success')
         return redirect(url_for('login'))
+
+    # NEW: Handle invalid form submission
+    if request.method == 'POST':
+        flash('Invalid input. Please check your details.', 'danger')
 
     return render_template('register.html', form=form)
 
@@ -120,8 +131,8 @@ def send_message():
     }
 
     messages.append(msg)
-
     socketio.emit("new_message", msg)
+
     return jsonify({"status": "sent"})
 
 @app.route("/messages")
@@ -136,7 +147,6 @@ def clear_chat():
     messages = []
     return jsonify({"status": "cleared"})
 
-# Typing feature
 @socketio.on("typing")
 def handle_typing(data):
     emit("typing", data, broadcast=True, include_self=False)
