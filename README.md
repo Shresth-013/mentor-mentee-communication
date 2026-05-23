@@ -36,11 +36,3 @@ A full-stack web application designed to streamline communication between mentor
 - **Other:** Jinja2 Templates
 
 ---
-
-## ⚙️ Installation & Setup
-
-### 1️⃣ Clone the repository
-
-```bash
-git clone https://github.com/your-username/mentor-mentee-communication.git
-cd mentor-mentee-communication
