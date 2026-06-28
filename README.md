@@ -15,7 +15,6 @@ A full-stack web application designed to streamline communication between mentor
 ### 💬 Real-Time Chat
 - One-to-one communication
 - Built using **Flask-SocketIO**
-- Typing indicator support
 
 ### ❓ Doubt System
 - Mentees can post doubts
